@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <description>Temporary storage for login verification codes.</description>
+    <label>Login Verification</label>
+    <pluralLabel>Login Verifications</pluralLabel>
+    <deploymentStatus>Deployed</deploymentStatus>
+    <enableActivities>false</enableActivities>
+    <enableFeeds>false</enableFeeds>
+    <enableHistory>false</enableHistory>
+    <enableReports>true</enableReports>
+    <sharingModel>ReadWrite</sharingModel>
+    <nameField>
+        <label>Verification Name</label>
+        <type>AutoNumber</type>
+        <displayFormat>LV-{0000}</displayFormat>
+    </nameField>
+</CustomObject>

@@ -1,0 +1,76 @@
+# ==========================================
+# SALESFORCE ARCHITECTURE & CACHE
+# ==========================================
+# Blocks local platform authentication caches and runtime server tools
+.sf/
+.sfdx/
+.localdevserver/
+deploy-options.json
+
+# ==========================================
+# FRONTEND LWC AUTO-GENERATION & TESTING
+# ==========================================
+# Blocks client-side compilation cache and local autocomplete definitions
+**/lwc/jsconfig.json
+coverage/
+.eslintcache
+
+# ==========================================
+# BACKEND STATIC ANALYSIS CACHE
+# ==========================================
+# Blocks Apex code analysis scanning caches
+.pmdCache
+
+# ==========================================
+# DEPENDENCY MANAGEMENT
+# ==========================================
+# Blocks massive external JavaScript package download folders
+node_modules/
+
+# ==========================================
+# IDE & EDITOR SPECIFIC (VS CODE / INTELLIJ)
+# ==========================================
+# Blocks local window states, workspace histories, and search caches
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+
+# ==========================================
+# LOGS & SYSTEM DIAGNOSTICS
+# ==========================================
+# Blocks local execution debug outputs and memory dumps
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ==========================================
+# SECURITY & ENVIRONMENT VARIABLES
+# ==========================================
+# Blocks local plaintext runtime configuration secrets
+.env
+
+# ==========================================
+# OPERATING SYSTEM JUNK FILES
+# ==========================================
+# Blocks hidden operating system thumbnail view files and trash bins
+.DS_Store
+Thumbs.db
+ehthumbs.db
+[Dd]esktop.ini
+$RECYCLE.BIN/
+
+# ==========================================
+# PYTHON SALESFORCE FUNCTIONS (IF USED)
+# ==========================================
+# Blocks virtual python environment layers
+**/__pycache__/
+**/.venv/
+**/venv/

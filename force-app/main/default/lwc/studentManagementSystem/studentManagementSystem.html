@@ -1,0 +1,646 @@
+<template>
+    <template if:true={isLoginScreen}>
+        <div class="login-container">
+            <div class="login-card">
+                <div class="login-header">
+                    <lightning-icon icon-name="standard:user" size="large" class="login-icon"></lightning-icon>
+                    <h1 class="login-title">Student Management Portal</h1>
+                    <p class="login-subtitle">Sign in to access your account</p>
+                </div>
+                <div class="login-form">
+                    <lightning-input
+                        label="Email Address"
+                        type="email"
+                        value={loginEmail}
+                        onchange={handleLoginEmailChange}
+                        placeholder="Enter your email address"
+                        class="login-input">
+                    </lightning-input>
+                    <template if:true={loginError}>
+                        <div class="login-error">{loginError}</div>
+                    </template>
+                    <div class="login-actions">
+                        <lightning-button
+                            label="Send Verification Code"
+                            variant="brand"
+                            onclick={handleSendCode}
+                            disabled={isAuthLoading}
+                            class="login-button">
+                        </lightning-button>
+                        <template if:true={isAuthLoading}>
+                            <lightning-spinner size="small" alternative-text="Sending code..." class="login-spinner"></lightning-spinner>
+                        </template>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <template if:true={isVerifyScreen}>
+        <div class="login-container">
+            <div class="login-card">
+                <div class="login-header">
+                    <lightning-icon icon-name="utility:lock" size="large" class="login-icon"></lightning-icon>
+                    <h1 class="login-title">Verify Your Identity</h1>
+                    <p class="login-subtitle">Enter the 6-digit code sent to <strong>{loginEmail}</strong></p>
+                </div>
+                <div class="login-form">
+                    <lightning-input
+                        label="Verification Code"
+                        type="tel"
+                        value={verificationCode}
+                        onchange={handleVerificationCodeChange}
+                        placeholder="123456"
+                        maxlength="6"
+                        class="login-input">
+                    </lightning-input>
+                    <template if:true={loginError}>
+                        <div class="login-error">{loginError}</div>
+                    </template>
+                    <div class="login-actions">
+                        <lightning-button
+                            label="Verify and Continue"
+                            variant="brand"
+                            onclick={handleVerifyCode}
+                            disabled={isAuthLoading}
+                            class="login-button">
+                        </lightning-button>
+                        <lightning-button
+                            label="Back"
+                            variant="neutral"
+                            onclick={backToEmail}
+                            class="login-back-button">
+                        </lightning-button>
+                        <template if:true={isAuthLoading}>
+                            <lightning-spinner size="small" alternative-text="Verifying code..." class="login-spinner"></lightning-spinner>
+                        </template>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <template if:true={isStudentProfileReady}>
+        <div class="student-dashboard-container">
+            <section class="profile-panel">
+                <div class="profile-card">
+                    <div class="profile-avatar">
+                        <lightning-icon icon-name="standard:user" size="large"></lightning-icon>
+                    </div>
+                    <div class="profile-copy">
+                        <h1 class="profile-name">{studentDashboard.studentName}</h1>
+                        <p class="profile-university">{studentDashboard.universityName}</p>
+                    </div>
+                    <span class={studentDashboard.statusBadgeClass}>{studentDashboard.status}</span>
+                </div>
+                <div class="profile-actions">
+                    <lightning-button label="Log Out" variant="neutral" onclick={handleLogout}></lightning-button>
+                </div>
+            </section>
+
+            <section class="student-metrics-grid">
+                <template if:true={studentDashboard.isEnrolled}>
+                    <div class="dashboard-card metrics-card grades-card">
+                        <div class="card-heading">
+                            <h2>Grades</h2>
+                            <span class="card-subtitle">Current GPA</span>
+                        </div>
+                        <div class="metric-value">{studentDashboard.gpa}</div>
+                    </div>
+                    <div class="dashboard-card metrics-card finances-card">
+                        <div class="card-heading">
+                            <h2>Finances</h2>
+                            <span class="card-subtitle">Paid vs Due</span>
+                        </div>
+                        <div class="finance-values">
+                            <div>
+                                <span class="label">Paid</span>
+                                <span class="value">{studentDashboard.tuitionPaid}</span>
+                            </div>
+                            <div>
+                                <span class="label">Due</span>
+                                <span class="value due">{studentDashboard.tuitionDue}</span>
+                            </div>
+                        </div>
+                        <lightning-button label="Pay Now" variant="brand" onclick={handlePayNow} class="action-button"></lightning-button>
+                    </div>
+                </template>
+
+                <template if:true={studentDashboard.isApplicant}>
+                    <div class="dashboard-card status-card full-width-card">
+                        <div class="card-heading">
+                            <h2>Application Progress</h2>
+                            <span class="card-subtitle">Track your admissions journey</span>
+                        </div>
+                        <div class="progress-line">
+                            <template for:each={studentDashboard.applicationProgress} for:item="step">
+                                <div key={step.id} class={step.stepClass}>
+                                    <div class="step-marker"></div>
+                                    <div class="step-label">{step.label}</div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+
+                <template if:true={studentDashboard.isProspect}>
+                    <div class="dashboard-card welcome-card full-width-card">
+                        <div class="card-heading">
+                            <h2>Welcome</h2>
+                            <span class="card-subtitle">Start your journey with us</span>
+                        </div>
+                        <p class="card-text">Explore applications, discover programs, and begin your path to enrollment.</p>
+                        <lightning-button label="Start Application" variant="brand" onclick={handleStartApplication} class="action-button"></lightning-button>
+                    </div>
+                </template>
+
+                <template if:true={studentDashboard.isAlumnus}>
+                    <div class="dashboard-card alumni-card full-width-card">
+                        <div class="card-heading">
+                            <h2>Congratulations</h2>
+                            <span class="card-subtitle">You are now an alumnus</span>
+                        </div>
+                        <p class="card-text">Celebrate your achievement and request official graduation records when you're ready.</p>
+                        <lightning-button label="Request Graduation Records" variant="brand" onclick={handleRequestRecords} class="action-button"></lightning-button>
+                    </div>
+                </template>
+            </section>
+
+            <section class="notifications-panel">
+                <div class="panel-header">
+                    <h2>Notifications</h2>
+                    <p>Messages from the Registrar and campus support team.</p>
+                </div>
+                <template if:true={studentDashboard.notifications}>
+                    <div class="notifications-list">
+                        <template for:each={studentDashboard.notifications} for:item="note">
+                            <div key={note.id} class={note.classes}>
+                                <div class="notification-title">{note.title}</div>
+                                <div class="notification-text">{note.message}</div>
+                            </div>
+                        </template>
+                    </div>
+                </template>
+                <template if:false={studentDashboard.notifications}>
+                    <p class="no-notifications">No notifications at this time.</p>
+                </template>
+            </section>
+        </div>
+    </template>
+
+    <template if:true={isRegistrar}>
+        <lightning-card title="Student Intelligence Dashboard" icon-name="standard:groups">
+            <div slot="actions">
+                <lightning-button
+                    label="Logout"
+                    variant="neutral"
+                    onclick={handleLogout}
+                    class="slds-m-right_small">
+                </lightning-button>
+                <lightning-button
+                    label="Add Record"
+                    variant="brand"
+                    icon-name="utility:add"
+                    onclick={openModal}>
+                </lightning-button>
+            </div>
+
+            <!-- ── SEARCH / FILTER BAR ──────────────────────────────────────── -->
+        <div class="slds-p-around_medium slds-border_bottom slds-theme_shade">
+            <div class="slds-grid slds-gutters slds-grid_vertical-align-center">
+                <div class="slds-col slds-size_1-of-4">
+                    <lightning-radio-group
+                        name="mode"
+                        label="Search Mode"
+                        options={viewOptions}
+                        value={currentMode}
+                        onchange={handleModeChange}
+                        type="button">
+                    </lightning-radio-group>
+                </div>
+                <div class="slds-col slds-size_3-of-4">
+                    <template if:true={isUniversityMode}>
+                        <lightning-combobox
+                            label="Filter by Campus"
+                            placeholder="Select University..."
+                            options={uniOptions}
+                            value={selectedUniId}
+                            onchange={handleUniSelect}>
+                        </lightning-combobox>
+                    </template>
+                    <template if:false={isUniversityMode}>
+                        <div class="slds-grid slds-gutters slds-grid_vertical-align-end">
+                            <div class="slds-col slds-size_1-of-3">
+                                <lightning-input
+                                    label="Search Name"
+                                    type="search"
+                                    placeholder="Search student..."
+                                    onchange={handleSearch}>
+                                </lightning-input>
+                            </div>
+                            <div class="slds-col slds-size_2-of-3">
+                                <lightning-button-group>
+                                    <lightning-button label="All"       onclick={handleStatusFilter} variant={allVar}></lightning-button>
+                                    <lightning-button label="Prospect"  onclick={handleStatusFilter} variant={prospectVar}></lightning-button>
+                                    <lightning-button label="Applicant" onclick={handleStatusFilter} variant={applicantVar}></lightning-button>
+                                    <lightning-button label="Enrolled"  onclick={handleStatusFilter} variant={enrolledVar}></lightning-button>
+                                    <lightning-button label="Alumnus"   onclick={handleStatusFilter} variant={alumnusVar}></lightning-button>
+                                </lightning-button-group>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── STUDENT TABLE ────────────────────────────────────────────── -->
+        <div class="slds-p-around_small">
+            <table class="slds-table slds-table_bordered slds-table_cell-buffer slds-table_fixed-layout">
+                <thead>
+                    <tr class="slds-line-height_reset">
+                        <th scope="col" style="width:20%"><div class="slds-truncate">Student</div></th>
+                        <th scope="col" style="width:16%"><div class="slds-truncate">University</div></th>
+                        <th scope="col" style="width:11%"><div class="slds-truncate">Status</div></th>
+                        <th scope="col" style="width:9%"><div class="slds-truncate">GPA</div></th>
+                        <th scope="col" style="width:16%"><div class="slds-truncate">Financials</div></th>
+                        <th scope="col" style="width:28%" class="slds-text-align_center"><div class="slds-truncate">Actions</div></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template for:each={filteredStudents} for:item="stu">
+                        <tr key={stu.studentId} class="slds-hint-parent">
+                            <td>
+                                <strong>{stu.studentName}</strong><br/>
+                                <span class="slds-text-body_small slds-text-color_weak">{stu.studentEmail}</span>
+                            </td>
+                            <td>{stu.universityName}</td>
+                            <td><span class={stu.statusClass}>{stu.studentStatus}</span></td>
+                            <td>
+                                <template if:true={stu.showAcademic}>
+                                    <span class={stu.gpaClass}>{stu.gpa}</span>
+                                    <template if:true={stu.isAtRisk}>
+                                        &nbsp;<lightning-icon
+                                            icon-name="utility:warning"
+                                            size="x-small"
+                                            variant="warning"
+                                            title="GPA Below 2.0 — At Risk">
+                                        </lightning-icon>
+                                    </template>
+                                </template>
+                                <template if:false={stu.showAcademic}>
+                                    <span class="slds-text-color_weak">--</span>
+                                </template>
+                            </td>
+                            <td>
+                                <template if:true={stu.showFinance}>
+                                    <span class="slds-text-color_success slds-text-body_small">
+                                        <strong>{stu.tuitionPaid}</strong> paid
+                                    </span><br/>
+                                    <span class="slds-text-color_error slds-text-body_small">
+                                        <strong>{stu.tuitionDue}</strong> due
+                                    </span>
+                                </template>
+                                <template if:false={stu.showFinance}>
+                                    <span class="slds-text-color_weak">N/A</span>
+                                </template>
+                            </td>
+                            <td class="center-column slds-text-align_center">
+                                <div class="action-button-row slds-grid slds-grid_vertical-align-center slds-nowrap">
+                                    <!-- Smart email button — opens editable compose modal -->
+                                    <lightning-button
+                                        label="Send Mail"
+                                        icon-name="utility:email"
+                                        variant="brand-outline"
+                                        value={stu.studentId}
+                                        data-type={stu.actionType}
+                                        onclick={handleAction}
+                                        class="fixed-action-btn slds-m-right_x-small">
+                                    </lightning-button>
+                                    <div class="slds-grid slds-grid_vertical-align-center">
+                                        <!-- Performance tracker (enrolled only) -->
+                                        <template if:true={stu.isEnrolled}>
+                                            <lightning-button-icon
+                                                icon-name="utility:chart"
+                                                variant="border-filled"
+                                                value={stu.studentId}
+                                                onclick={handleViewPerformance}
+                                                title="Performance Tracker"
+                                                class="slds-m-right_x-small">
+                                            </lightning-button-icon>
+                                        </template>
+                                        <lightning-button-icon
+                                            icon-name="utility:edit"
+                                            variant="border-filled"
+                                            value={stu.studentId}
+                                            onclick={handleEdit}
+                                            title="Edit Record"
+                                            class="slds-m-right_x-small">
+                                        </lightning-button-icon>
+                                        <lightning-button-icon
+                                            icon-name="utility:delete"
+                                            variant="error"
+                                            value={stu.studentId}
+                                            onclick={handleDelete}
+                                            title="Delete Record">
+                                        </lightning-button-icon>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════════════
+             MODAL 1 — ADD / EDIT RECORD
+        ══════════════════════════════════════════════════════════════════ -->
+        <template if:true={isModalOpen}>
+            <section role="dialog" tabindex="-1" aria-modal="true"
+                     class="slds-modal slds-fade-in-open">
+                <div class="slds-modal__container">
+                    <header class="slds-modal__header">
+                        <h2 class="slds-text-heading_medium">{modalTitle}</h2>
+                    </header>
+                    <div class="slds-modal__content slds-p-around_medium">
+
+                        <!-- Entity type selector — new records only -->
+                        <template if:true={isNewRecord}>
+                            <div class="entity-toggle slds-grid slds-grid_vertical-align-center slds-m-bottom_medium">
+                                <button class={studentBtnClass}    onclick={setEntityStudent}>🎓&nbsp; New Student</button>
+                                <button class={universityBtnClass} onclick={setEntityUniversity}>🏛️&nbsp; New University</button>
+                            </div>
+                        </template>
+
+                        <lightning-record-edit-form
+                            object-api-name="Account"
+                            record-id={currentRecordId}
+                            record-type-id={formRecordTypeId}
+                            onsubmit={handleSubmit}
+                            onsuccess={handleSaveSuccess}
+                            onerror={handleError}>
+
+                            <!-- ① Create Student ──────────────────────── -->
+                            <template if:true={showStudentNewFields}>
+                                <div class="slds-grid slds-wrap">
+                                    <div class="slds-col slds-size_1-of-2 slds-p-around_x-small">
+                                        <lightning-input-field field-name="Name" required></lightning-input-field>
+                                    </div>
+                                    <div class="slds-col slds-size_1-of-2 slds-p-around_x-small">
+                                        <lightning-input-field field-name="Student_Email__c" required></lightning-input-field>
+                                    </div>
+                                    <div class="slds-col slds-size_1-of-2 slds-p-around_x-small">
+                                        <lightning-input-field
+                                            field-name="University_Lookup__c"
+                                            label="University"
+                                            required>
+                                        </lightning-input-field>
+                                    </div>
+                                    <div class="slds-col slds-size_1-of-2 slds-p-around_x-small">
+                                        <lightning-combobox
+                                            name="statSelect"
+                                            label="Initial Stage"
+                                            options={statusOptions}
+                                            required>
+                                        </lightning-combobox>
+                                    </div>
+                                    <div class="slds-col slds-size_1-of-2 slds-p-around_x-small">
+                                        <lightning-input-field field-name="Current_GPA__c"></lightning-input-field>
+                                    </div>
+                                    <div class="slds-col slds-size_1-of-2 slds-p-around_x-small">
+                                        <lightning-input-field field-name="Major__c"></lightning-input-field>
+                                    </div>
+                                </div>
+                            </template>
+
+                            <!-- ② Create University ───────────────────── -->
+                            <template if:true={showUniversityNewFields}>
+                                <div class="slds-grid slds-wrap">
+                                    <div class="slds-col slds-size_1-of-1 slds-p-around_x-small">
+                                        <lightning-input-field field-name="Name" label="University Name" required></lightning-input-field>
+                                    </div>
+                                    <div class="slds-col slds-size_1-of-2 slds-p-around_x-small">
+                                        <lightning-input-field field-name="Phone"></lightning-input-field>
+                                    </div>
+                                    <div class="slds-col slds-size_1-of-2 slds-p-around_x-small">
+                                        <lightning-input-field field-name="Website"></lightning-input-field>
+                                    </div>
+                                    <div class="slds-col slds-size_1-of-2 slds-p-around_x-small">
+                                        <lightning-input-field field-name="BillingCity" label="City"></lightning-input-field>
+                                    </div>
+                                    <div class="slds-col slds-size_1-of-2 slds-p-around_x-small">
+                                        <lightning-input-field field-name="BillingCountry" label="Country"></lightning-input-field>
+                                    </div>
+                                </div>
+                            </template>
+
+                            <!-- ③ Edit Existing Student ───────────────── -->
+                            <template if:false={isNewRecord}>
+                                <div class="slds-grid slds-wrap">
+                                    <div class="slds-col slds-size_1-of-2 slds-p-around_x-small">
+                                        <lightning-input-field field-name="Name" required></lightning-input-field>
+                                    </div>
+                                    <div class="slds-col slds-size_1-of-2 slds-p-around_x-small">
+                                        <lightning-input-field field-name="Student_Email__c" required></lightning-input-field>
+                                    </div>
+                                    <div class="slds-col slds-size_1-of-2 slds-p-around_x-small">
+                                        <lightning-input-field
+                                            field-name="University_Lookup__c"
+                                            label="University"
+                                            required>
+                                        </lightning-input-field>
+                                    </div>
+                                    <div class="slds-col slds-size_1-of-2 slds-p-around_x-small">
+                                        <lightning-input-field field-name="Student_Status__c" required></lightning-input-field>
+                                    </div>
+                                    <div class="slds-col slds-size_1-of-2 slds-p-around_x-small">
+                                        <lightning-input-field field-name="Current_GPA__c"></lightning-input-field>
+                                    </div>
+                                    <div class="slds-col slds-size_1-of-2 slds-p-around_x-small">
+                                        <lightning-input-field field-name="Major__c"></lightning-input-field>
+                                    </div>
+                                </div>
+                            </template>
+
+                            <div class="slds-m-top_medium slds-text-align_right">
+                                <lightning-button label="Cancel" onclick={closeModal} class="slds-m-right_small"></lightning-button>
+                                <lightning-button type="submit" variant="brand" label="Save Record"></lightning-button>
+                            </div>
+                        </lightning-record-edit-form>
+                    </div>
+                </div>
+            </section>
+            <div class="slds-backdrop slds-backdrop_open"></div>
+        </template>
+
+        <!-- ══════════════════════════════════════════════════════════════
+             MODAL 2 — COMPOSE EMAIL (pre-filled template, fully editable)
+        ══════════════════════════════════════════════════════════════════ -->
+        <template if:true={isEmailModalOpen}>
+            <section role="dialog" tabindex="-1" aria-modal="true"
+                     class="slds-modal slds-fade-in-open">
+                <div class="slds-modal__container">
+                    <header class="slds-modal__header">
+                        <button
+                            class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse"
+                            title="Close"
+                            onclick={closeEmailModal}>
+                            <lightning-icon icon-name="utility:close" size="small"></lightning-icon>
+                        </button>
+                        <h2 class="slds-text-heading_medium">
+                            <lightning-icon icon-name="utility:email" size="small" class="slds-m-right_x-small"></lightning-icon>
+                            Compose Email — {emailStudentName}
+                        </h2>
+                        <p class="slds-text-body_small slds-text-color_inverse-weak slds-m-top_xx-small">
+                            Template pre-loaded. Edit freely before sending.
+                        </p>
+                    </header>
+                    <div class="slds-modal__content slds-p-around_medium">
+                        <div class="slds-m-bottom_small">
+                            <lightning-input
+                                label="Subject"
+                                value={emailSubject}
+                                onchange={handleEmailSubjectChange}
+                                required>
+                            </lightning-input>
+                        </div>
+                        <lightning-input-rich-text
+                            label="Message Body"
+                            placeholder="Type your message here..."
+                            value={emailBody}
+                            onchange={handleEmailBodyChange}
+                            class="message-body-textarea">
+                        </lightning-input-rich-text>
+                    </div>
+                    <div class="slds-modal__footer">
+                        <lightning-button label="Cancel" onclick={closeEmailModal} class="slds-m-right_small"></lightning-button>
+                        <lightning-button
+                            variant="brand"
+                            label="Send Email"
+                            icon-name="utility:send"
+                            onclick={sendEmail}>
+                        </lightning-button>
+                    </div>
+                </div>
+            </section>
+            <div class="slds-backdrop slds-backdrop_open"></div>
+        </template>
+
+        <!-- ══════════════════════════════════════════════════════════════
+             MODAL 3 — PERFORMANCE TRACKER
+        ══════════════════════════════════════════════════════════════════ -->
+        <template if:true={isPerformanceOpen}>
+            <section role="dialog" tabindex="-1" aria-modal="true"
+                     class="slds-modal slds-fade-in-open slds-modal_large">
+                <div class="slds-modal__container">
+                    <header class="slds-modal__header">
+                        <button
+                            class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse"
+                            title="Close"
+                            onclick={closePerformanceModal}>
+                            <lightning-icon icon-name="utility:close" size="small"></lightning-icon>
+                        </button>
+                        <h2 class="slds-text-heading_medium">
+                            <lightning-icon icon-name="utility:chart" size="small" class="slds-m-right_x-small"></lightning-icon>
+                            Performance Tracker
+                        </h2>
+                    </header>
+                    <div class="slds-modal__content slds-p-around_medium">
+
+                        <!-- Loading -->
+                        <template if:false={perfData}>
+                            <div class="slds-text-align_center slds-p-around_large">
+                                <lightning-spinner alternative-text="Loading..." size="medium"></lightning-spinner>
+                                <p class="slds-m-top_medium slds-text-color_weak">Fetching performance data...</p>
+                            </div>
+                        </template>
+
+                        <!-- Data -->
+                        <template if:true={perfData}>
+                            <h3 class="slds-text-heading_small slds-m-bottom_medium">{perfData.studentName}</h3>
+
+                            <!-- KPI Cards -->
+                            <div class="slds-grid slds-gutters slds-m-bottom_medium">
+                                <div class="slds-col slds-size_1-of-3">
+                                    <div class="stat-card slds-text-align_center">
+                                        <div class="stat-number">{perfData.gpa}</div>
+                                        <div class="stat-label slds-text-color_weak">Current GPA</div>
+                                    </div>
+                                </div>
+                                <div class="slds-col slds-size_1-of-3">
+                                    <div class="stat-card slds-text-align_center">
+                                        <div class="stat-number slds-text-color_success">{perfData.completedTasks}</div>
+                                        <div class="stat-label slds-text-color_weak">Tasks Completed</div>
+                                    </div>
+                                </div>
+                                <div class="slds-col slds-size_1-of-3">
+                                    <div class="stat-card slds-text-align_center">
+                                        <div class="stat-number slds-text-color_error">{perfData.openTasks}</div>
+                                        <div class="stat-label slds-text-color_weak">Tasks Open</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- GPA Progress Bar -->
+                            <div class="slds-m-bottom_small">
+                                <div class="slds-grid slds-grid_vertical-align-center slds-m-bottom_x-small">
+                                    <div class="slds-col">
+                                        <span class="slds-text-body_small slds-text-title_caps">
+                                            GPA Score &nbsp;({perfData.gpa} / 4.0) &nbsp;·&nbsp; {perfData.gpaPercent}%
+                                        </span>
+                                    </div>
+                                    <div class="slds-col slds-no-flex">
+                                        <span class={perfData.ratingClass}>{perfData.performanceRating}</span>
+                                    </div>
+                                </div>
+                                <div class="performance-bar-container slds-size_1-of-1">
+                                    <div class={perfData.barClass} data-bar></div>
+                                </div>
+                            </div>
+
+                            <!-- Completion Rate -->
+                            <p class="slds-text-body_small slds-text-color_weak slds-m-bottom_medium">
+                                Task completion rate: <strong>{perfData.completionRate}%</strong>
+                                ({perfData.completedTasks} of {perfData.totalTasks} tasks done)
+                            </p>
+
+                            <!-- Task List -->
+                            <h4 class="slds-text-heading_small slds-m-bottom_small">
+                                Recent Tasks ({perfData.totalTasks})
+                            </h4>
+                            <template if:true={perfData.hasTasks}>
+                                <template for:each={perfData.tasks} for:item="task">
+                                    <div key={task.id} class="task-row slds-grid slds-grid_vertical-align-center slds-grid_align-spread">
+                                        <div>
+                                            <p class="slds-text-body_regular"><strong>{task.subject}</strong></p>
+                                            <p class="slds-text-body_small slds-text-color_weak">
+                                                Due: {task.activityDate}&nbsp;·&nbsp;Priority: {task.priority}
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <span class={task.taskClass}><strong>{task.status}</strong></span>
+                                        </div>
+                                    </div>
+                                </template>
+                            </template>
+                            <template if:false={perfData.hasTasks}>
+                                <div class="slds-text-align_center slds-p-around_medium">
+                                    <lightning-icon icon-name="utility:taskalt" size="large"></lightning-icon>
+                                    <p class="slds-text-color_weak slds-m-top_small">
+                                        No tasks have been logged for this student yet.
+                                    </p>
+                                </div>
+                            </template>
+                        </template>
+
+                    </div>
+                    <div class="slds-modal__footer">
+                        <lightning-button variant="brand" label="Close" onclick={closePerformanceModal}></lightning-button>
+                    </div>
+                </div>
+            </section>
+            <div class="slds-backdrop slds-backdrop_open"></div>
+        </template>
+
+    </lightning-card>
+</template>
